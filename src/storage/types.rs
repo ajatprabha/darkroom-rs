@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::time::{Duration, SystemTime};
-use axum::http::StatusCode;
+use axum::http::{HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 pub struct ByteRange(String);
@@ -27,16 +27,15 @@ pub struct GetResponse {
 
 impl GetResponse {
     pub fn with_cache_control(mut self, cache_control: Duration) -> Self {
-        if self.metadata.is_some() {
-            self.metadata.as_mut().unwrap().cache_control = Some(cache_control);
-            return self;
+        if let Some(ref mut metadata) = self.metadata {
+            metadata.cache_control = Some(cache_control);
+        } else {
+            self.metadata = Some(Metadata {
+                content_type: None,
+                last_modified: None,
+                cache_control: Some(cache_control),
+            });
         }
-
-        self.metadata = Some(Metadata {
-            content_type: None,
-            last_modified: None,
-            cache_control: Some(cache_control),
-        });
         self
     }
 }
