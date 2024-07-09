@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 use axum::extract::{Extension, Path, Query};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use crate::handler::Dependencies;
 use crate::storage::GetRequest;
+use crate::handler::query::ProcessParams;
 
 pub async fn image(
     Extension(deps): Extension<Arc<Dependencies>>,
     Path(path): Path<String>,
-    Query(_query_params): Query<HashMap<String, String>>,
+    Query(params): Query<ProcessParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let res = deps.storage.get(GetRequest {
         path,

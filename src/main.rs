@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         }
     };
 
-    let deps = Arc::new(Dependencies::new {
+    let deps = Arc::new(Dependencies {
         storage,
         cache_time: cfg.handler.response.cache_duration,
     });
