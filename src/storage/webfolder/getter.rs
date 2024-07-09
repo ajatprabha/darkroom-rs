@@ -30,7 +30,7 @@ impl<'a> Getter for WebFolderGetter<'a> {
             "{}://{}{}",
             self.base_url.scheme(),
             self.base_url.host(),
-            if let Some(prefix) = &self.path_prefix {
+            if let Some(prefix) = self.path_prefix {
                 format!("{}/{}", prefix, req.path)
             } else {
                 req.path
