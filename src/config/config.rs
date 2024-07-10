@@ -24,17 +24,17 @@ pub struct Source {
     pub network: Network,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub enum SourceKind {
     WebFolder,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct WebFolder {
     pub base_url: Url,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Url(ImplUrl);
 
 impl Url {

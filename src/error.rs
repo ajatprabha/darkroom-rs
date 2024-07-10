@@ -4,4 +4,6 @@ pub enum Error {
     Generic(String),
     #[error(transparent)]
     IO(#[from] std::io::Error),
+    #[error(transparent)]
+    Config(#[from] config::ConfigError),
 }
