@@ -70,14 +70,14 @@ impl Server {
         let mut sigint = signal(SignalKind::interrupt()).map_err(Error::IO)?;
         let mut sigterm = signal(SignalKind::terminate()).map_err(Error::IO)?;
 
-        return Ok(async move {
+        Ok(async move {
             loop {
                 tokio::select! {
                     _ = sigint.recv() => Self::handle_sig(shutdown_counter.clone(), notify.clone()).await,
                     _ = sigterm.recv() => Self::handle_sig(shutdown_counter.clone(), notify.clone()).await,
                 }
             }
-        });
+        })
     }
 
     async fn handle_sig(shutdown_counter: Arc<AtomicUsize>, notify: Arc<Notify>) {

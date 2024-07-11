@@ -5,7 +5,7 @@ http:
 source:
   kind: WebFolder
   web_folder:
-    base_url: https://ajatprabha.in
+    base_url: https://example.com
   path_prefix: /assets
   network:
     config:
