@@ -8,8 +8,6 @@ pub(crate) enum MonoChrome {
     ARGB(u8, u8, u8, u8),
 }
 
-pub const BLACK: MonoChrome = MonoChrome::RGB(0, 0, 0);
-
 impl<'de> Deserialize<'de> for MonoChrome {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

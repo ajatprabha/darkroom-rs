@@ -15,6 +15,8 @@ pub struct ProcessParams {
     #[serde(rename = "h")]
     pub height: Option<u16>,
 
+    pub blur: Option<u16>,
+
     pub fit: Option<Fit>,
     pub crop: Option<Crop>,
     pub flip: Option<Flip>,
@@ -34,6 +36,7 @@ impl ProcessParams {
             self.crop.is_none() &&
             self.width.is_none() &&
             self.height.is_none() &&
+            self.blur.is_none() &&
             self.flip.is_none() &&
             self.rotate.is_none() &&
             self.auto_features.is_none() &&

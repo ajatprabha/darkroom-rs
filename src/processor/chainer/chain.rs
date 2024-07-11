@@ -6,6 +6,8 @@ use crate::processor::procs::crop::Crop as CropProcessor;
 use crate::processor::procs::resize::Resize as ResizeProcessor;
 use crate::processor::procs::flip::Flip as FlipProcessor;
 use crate::processor::procs::rotate::Rotate as RotateProcessor;
+use crate::processor::procs::monochrome::MonoChrome as MonoChromeProcessor;
+use crate::processor::procs::blur::Blur as BlurProcessor;
 
 pub struct Processor {}
 
@@ -20,8 +22,6 @@ impl Processor {
         if let Some(rotate) = params.rotate {
             cb.add_processor(RotateProcessor { degrees: rotate.0 });
         }
-
-        let (w, h) = (params.width, params.height);
 
         match params.fit {
             Some(Fit::Crop) => {
@@ -39,14 +39,22 @@ impl Processor {
                 });
             }
             None => {
-                if w.is_some() || h.is_some() {
+                if params.width.is_some() || params.height.is_some() {
                     cb.add_processor(ResizeProcessor {
-                        width: w.unwrap_or(0) as u32,
-                        height: h.unwrap_or(0) as u32,
+                        width: params.width.unwrap_or(0) as u32,
+                        height: params.height.unwrap_or(0) as u32,
                         maintain_aspect_ratio: true,
                     });
                 }
             }
+        }
+
+        if let Some(monochrome) = params.monochrome {
+            cb.add_processor(MonoChromeProcessor { color: monochrome });
+        }
+
+        if let Some(blur) = params.blur {
+            cb.add_processor(BlurProcessor { radius: blur });
         }
 
         cb.build().reduce(image)
