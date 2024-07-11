@@ -17,7 +17,7 @@ impl<'de> Deserialize<'de> for Rotate {
             type Value = Rotate;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("an angle value")
+                formatter.write_str("a floating angle value")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -44,8 +44,8 @@ impl<'de> Deserialize<'de> for Rotate {
 
 #[cfg(test)]
 mod tests {
-    use serde::de::IntoDeserializer;
-    use serde::de::value::StringDeserializer;
+    use serde::de::{Error, IntoDeserializer};
+    use serde::de::value::{BoolDeserializer, StrDeserializer};
     use super::*;
 
     type E = de::value::Error;
@@ -67,9 +67,26 @@ mod tests {
         ];
 
         for testcase in testcases {
-            assert_eq!(Rotate::deserialize::<StringDeserializer<E>>(
-                testcase.0.to_string().into_deserializer()
-            ).unwrap(), Rotate(testcase.1));
+            assert_eq!(
+                Ok(Rotate(testcase.1)),
+                Rotate::deserialize::<StrDeserializer<E>>(testcase.0.into_deserializer())
+            );
         }
+    }
+
+    #[test]
+    fn test_rotate_error() {
+        assert_eq!(
+            Rotate::deserialize::<StrDeserializer<E>>("".into_deserializer()),
+            Err(Error::custom("invalid angle: "))
+        );
+    }
+
+    #[test]
+    fn test_rotate_expect() {
+        assert_eq!(
+            Rotate::deserialize::<BoolDeserializer<E>>(true.into_deserializer()),
+            Err(Error::custom("invalid type: boolean `true`, expected a floating angle value"))
+        );
     }
 }

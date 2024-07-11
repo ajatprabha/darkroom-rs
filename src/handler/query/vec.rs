@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Deserializer};
 use serde::de::{self, IntoDeserializer, SeqAccess, Visitor};
+use serde::de::value::StrDeserializer;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct CommaSeparatedVec<T>(Vec<T>);
@@ -26,9 +27,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_str(CommaSeparatedVecVisitor::<T> {
-            marker: PhantomData,
-        })
+        deserializer.deserialize_str(CommaSeparatedVecVisitor::<T> { marker: PhantomData })
     }
 }
 
@@ -52,8 +51,50 @@ where
     {
         let vec = value
             .split(',')
-            .map(|item| T::deserialize(item.trim().into_deserializer()))
+            .map(|item| item.trim())
+            .filter(|item| !item.is_empty())
+            .map(|item| {
+                T::deserialize(item.into_deserializer())
+            })
             .collect::<Result<Vec<_>, _>>()?;
         Ok(CommaSeparatedVec(vec))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde::de::Error;
+    use serde::de::value::StrDeserializer;
+    use crate::handler::query::AutoFeature;
+    use super::*;
+
+    type E = de::value::Error;
+
+    #[test]
+    fn test_comma_separated_vec_deserialize() {
+        let testcases = vec![
+            ("", vec![]),
+            ("compress", vec![AutoFeature::Compress]),
+            ("compress, format", vec![AutoFeature::Compress, AutoFeature::Format]),
+        ];
+
+        for testcase in testcases {
+            assert_eq!(
+                CommaSeparatedVec::deserialize::<StrDeserializer<E>>(
+                    testcase.0.into_deserializer()
+                ),
+                Ok(CommaSeparatedVec(testcase.1))
+            );
+        }
+    }
+
+    #[test]
+    fn test_comma_separated_vec_deserialize_error() {
+        assert_eq!(
+            CommaSeparatedVec::<AutoFeature>::deserialize::<StrDeserializer<E>>(
+                "compress,format,invalid".into_deserializer()
+            ),
+            Err(Error::custom("unknown variant `invalid`, expected `compress` or `format`"))
+        );
     }
 }

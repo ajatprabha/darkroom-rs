@@ -74,7 +74,8 @@ impl<'de> Deserialize<'de> for MonoChrome {
 
 #[cfg(test)]
 mod tests {
-    use serde::de::value::StringDeserializer;
+    use serde::de::{Error, IntoDeserializer};
+    use serde::de::value::{I32Deserializer, StrDeserializer};
     use super::*;
 
     type E = de::value::Error;
@@ -96,9 +97,26 @@ mod tests {
         ];
 
         for (input, expected) in testcases {
-            let deserializer = StringDeserializer::<E>::new(input.to_owned());
-            let actual = MonoChrome::deserialize(deserializer).unwrap();
-            assert_eq!(expected, actual);
+            assert_eq!(
+                Ok(expected),
+                MonoChrome::deserialize::<StrDeserializer<E>>(input.into_deserializer())
+            );
         }
+    }
+
+    #[test]
+    fn test_error() {
+        assert_eq!(
+            MonoChrome::deserialize::<StrDeserializer<E>>("".into_deserializer()),
+            Err(Error::custom("invalid hex color"))
+        );
+    }
+
+    #[test]
+    fn test_expect() {
+        assert_eq!(
+            MonoChrome::deserialize::<I32Deserializer<E>>(111111.into_deserializer()),
+            Err(Error::custom("invalid type: integer `111111`, expected a 6-digit hex color"))
+        );
     }
 }

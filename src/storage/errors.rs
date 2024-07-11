@@ -1,5 +1,4 @@
 use axum::http::StatusCode;
-use crate::processor::error::Error as ProcessorError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

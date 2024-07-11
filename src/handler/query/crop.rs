@@ -57,7 +57,7 @@ impl<'de> Deserialize<'de> for Crop {
 #[cfg(test)]
 mod tests {
     use serde::de::IntoDeserializer;
-    use serde::de::value::StringDeserializer;
+    use serde::de::value::{BoolDeserializer, StrDeserializer};
     use super::*;
 
     type E = de::value::Error;
@@ -83,9 +83,24 @@ mod tests {
         for testcase in testcases {
             assert_eq!(
                 testcase.1,
-                Crop::deserialize::<StringDeserializer<E>>
-                    (testcase.0.to_string().into_deserializer()).unwrap()
+                Crop::deserialize::<StrDeserializer<E>>
+                    (testcase.0.into_deserializer()).unwrap()
             );
         }
+    }
+
+    #[test]
+    fn test_error() {
+        let err = Crop::deserialize::<StrDeserializer<E>>("invalid".into_deserializer()).unwrap_err();
+        assert_eq!(err.to_string(), "invalid crop: invalid");
+    }
+
+    #[test]
+    fn test_unexpected() {
+        let err = Crop::deserialize::<BoolDeserializer<E>>(true.into_deserializer()).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "invalid type: boolean `true`, expected a comma-separated list of crop values"
+        );
     }
 }

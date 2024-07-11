@@ -8,6 +8,18 @@ use crate::handler::query::rotate::Rotate;
 use crate::handler::query::vec::CommaSeparatedVec;
 use crate::processor::Processor;
 
+macro_rules! impl_is_none {
+    ($($field:ident),*) => {
+        impl ProcessParams {
+            pub fn is_noop(&self) -> bool {
+                $(
+                    self.$field.is_none() &&
+                )* true
+            }
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct ProcessParams {
     #[serde(rename = "w")]
@@ -30,19 +42,9 @@ pub struct ProcessParams {
     pub monochrome: Option<MonoChrome>,
 }
 
-impl ProcessParams {
-    pub fn is_noop(&self) -> bool {
-        self.fit.is_none() &&
-            self.crop.is_none() &&
-            self.width.is_none() &&
-            self.height.is_none() &&
-            self.blur.is_none() &&
-            self.flip.is_none() &&
-            self.rotate.is_none() &&
-            self.auto_features.is_none() &&
-            self.monochrome.is_none()
-    }
-}
+impl_is_none!(
+    width, height, blur, fit, crop, flip, rotate, auto_features, monochrome
+);
 
 #[cfg(test)]
 mod tests {
@@ -74,5 +76,12 @@ mod tests {
         let uri: Uri = "https://example.com/path/to/image?monochrome=000000".parse().unwrap();
         let params: Query<ProcessParams> = Query::try_from_uri(&uri).unwrap();
         assert_eq!(params.monochrome, Some(MonoChrome::RGB(0, 0, 0)));
+    }
+
+    #[test]
+    fn test_query_params_noop() {
+        let uri: Uri = "https://example.com/path/to/image".parse().unwrap();
+        let params: Query<ProcessParams> = Query::try_from_uri(&uri).unwrap();
+        assert!(params.is_noop());
     }
 }
