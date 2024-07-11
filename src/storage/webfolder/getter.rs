@@ -2,7 +2,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use axum::http::StatusCode;
 use reqwest::Client;
-use crate::config::config::Url;
+use crate::config::url::Url;
 use crate::storage::errors::Error;
 use crate::storage::getter::Getter;
 use crate::storage::types::{GetRequest, GetResponse};
@@ -29,7 +29,7 @@ impl<'a> Getter for WebFolderGetter<'a> {
         let url = format!(
             "{}://{}{}",
             self.base_url.scheme(),
-            self.base_url.host(),
+            self.base_url.host_str().unwrap_or(""),
             if let Some(prefix) = self.path_prefix {
                 format!("{}/{}", prefix, req.path)
             } else {
@@ -48,7 +48,7 @@ impl<'a> Getter for WebFolderGetter<'a> {
             return Err(Error::Upstream {
                 status_code: Some(res.status().as_u16()),
                 message: res.text().await.unwrap_or_default(),
-            })
+            });
         }
 
         let body = res.bytes().await.map_err(Error::Reqwest)?;
