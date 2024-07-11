@@ -1,6 +1,7 @@
 mod image;
 mod deps;
-mod query;
+pub mod query;
+mod response;
 
 pub use image::image;
 pub use deps::Dependencies;

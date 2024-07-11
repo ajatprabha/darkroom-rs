@@ -5,10 +5,12 @@ mod rotate;
 mod auto;
 mod vec;
 mod monochrome;
+mod flip;
 
-pub(super) use params::ProcessParams;
-pub(super) use crop::Crop;
-pub(super) use fit::Fit;
-pub(super) use rotate::Rotate;
-pub(super) use auto::AutoFeature;
-pub(super) use monochrome::MonoChrome;
+pub use params::ProcessParams;
+pub use fit::Fit;
+pub(crate) use crop::Crop;
+pub(crate) use flip::Flip;
+pub(crate) use rotate::Rotate;
+pub(crate) use auto::AutoFeature;
+pub(crate) use monochrome::MonoChrome;

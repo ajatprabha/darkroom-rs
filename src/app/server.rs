@@ -14,6 +14,7 @@ use crate::handler::Dependencies;
 use crate::storage::webfolder::WebFolderGetter;
 
 use crate::prelude::*;
+use crate::processor::chainer::ChainProcessor;
 
 pub(crate) struct Server {
     address: SocketAddr,
@@ -36,6 +37,7 @@ impl Server {
 
         let deps = Arc::new(Dependencies {
             storage,
+            processor: Arc::new(ChainProcessor {}),
             cache_time: cfg.handler.response.cache_duration,
         });
 

@@ -2,12 +2,14 @@ use serde::Deserialize;
 use crate::handler::query::auto::AutoFeature;
 use crate::handler::query::crop::Crop;
 use crate::handler::query::fit::Fit;
+use crate::handler::query::flip::Flip;
 use crate::handler::query::monochrome::MonoChrome;
 use crate::handler::query::rotate::Rotate;
 use crate::handler::query::vec::CommaSeparatedVec;
+use crate::processor::Processor;
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub(crate) struct ProcessParams {
+pub struct ProcessParams {
     #[serde(rename = "w")]
     pub width: Option<u16>,
     #[serde(rename = "h")]
@@ -15,7 +17,7 @@ pub(crate) struct ProcessParams {
 
     pub fit: Option<Fit>,
     pub crop: Option<Crop>,
-    pub flip: Option<bool>,
+    pub flip: Option<Flip>,
 
     #[serde(rename = "rot")]
     pub rotate: Option<Rotate>,
@@ -24,6 +26,19 @@ pub(crate) struct ProcessParams {
     pub auto_features: Option<CommaSeparatedVec<AutoFeature>>,
 
     pub monochrome: Option<MonoChrome>,
+}
+
+impl ProcessParams {
+    pub fn is_noop(&self) -> bool {
+        self.fit.is_none() &&
+            self.crop.is_none() &&
+            self.width.is_none() &&
+            self.height.is_none() &&
+            self.flip.is_none() &&
+            self.rotate.is_none() &&
+            self.auto_features.is_none() &&
+            self.monochrome.is_none()
+    }
 }
 
 #[cfg(test)]

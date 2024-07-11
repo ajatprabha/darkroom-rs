@@ -1,3 +1,5 @@
+use crate::processor;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("error: {0}")]
@@ -6,4 +8,6 @@ pub enum Error {
     IO(#[from] std::io::Error),
     #[error(transparent)]
     Config(#[from] config::ConfigError),
+    #[error(transparent)]
+    Image(#[from] processor::error::Error),
 }

@@ -1,9 +1,10 @@
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Deserializer};
 use serde::de::{self, Visitor};
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Rotate(f32);
+pub(crate) struct Rotate(pub f32);
 
 impl<'de> Deserialize<'de> for Rotate {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

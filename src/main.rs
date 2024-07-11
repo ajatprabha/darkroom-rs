@@ -4,6 +4,7 @@ mod error;
 mod prelude;
 mod handler;
 mod app;
+mod processor;
 
 use crate::config::Config;
 use crate::app::Server;

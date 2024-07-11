@@ -5,14 +5,16 @@ edition = "2021"
 
 [dependencies]
 config = "0.14.0"
-serde = { version = "1.0.203", features = ["derive"] }
+serde = { version = "1.0.204", features = ["derive"] }
 reqwest = { version = "0.12.5", features = ["gzip"] }
 tokio = { version = "1.38.0", features = ["full"] }
 axum = "0.7.5"
 humantime-serde = "1.1.1"
 thiserror = "1.0.61"
-async-trait = "0.1.80"
+async-trait = "0.1.81"
 url = "2.5.2"
+image = "0.25.1"
+imageproc = "0.25.0"
 
 [dev-dependencies]
 anyhow = "1.0.86"
