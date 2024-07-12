@@ -60,3 +60,46 @@ impl Processor {
         cb.build().reduce(image)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use image::{DynamicImage, RgbImage};
+    use crate::handler::query::{AutoFeature, Crop, Flip, MonoChrome, Rotate};
+    use super::*;
+
+    #[test]
+    fn test_process() {
+        let testcases: Vec<(ProcessParams, Vec<u8>)> = vec![
+            (ProcessParams {
+                width: Some(2),
+                height: Some(2),
+                fit: Some(Fit::Crop),
+                crop: Some(Crop::TopLeft),
+                flip: Some(Flip::VerticalHorizontal),
+                blur: Some(3),
+                rotate: Some(Rotate(90.0)),
+                auto_features: Some(AutoFeature::from_iter(vec![AutoFeature::Compress])),
+                monochrome: Some(MonoChrome::ARGB(0, 0, 0, 0)),
+            }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec()),
+            (ProcessParams {
+                width: Some(3),
+                height: Some(4),
+                fit: Some(Fit::Scale),
+                ..ProcessParams::default()
+            }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec()),
+            (ProcessParams {
+                width: Some(1),
+                height: Some(1),
+                ..ProcessParams::default()
+            }, [0, 0, 0].to_vec()),
+        ];
+
+        for testcase in testcases {
+            let base_image: DynamicImage = DynamicImage::ImageRgb8(RgbImage::new(32, 32));
+            let processor = Processor {};
+            let mut image = Image::new(base_image);
+            processor.process(&mut image, testcase.0).unwrap();
+            assert_eq!(&testcase.1, image.as_bytes());
+        }
+    }
+}

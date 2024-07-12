@@ -20,7 +20,7 @@ macro_rules! impl_is_none {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Default)]
 pub struct ProcessParams {
     #[serde(rename = "w")]
     pub width: Option<u16>,

@@ -9,6 +9,12 @@ use serde::de::value::StrDeserializer;
 #[derive(Debug, PartialEq)]
 pub(crate) struct CommaSeparatedVec<T>(Vec<T>);
 
+impl<T> CommaSeparatedVec<T> {
+    pub fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
 impl<T> Deref for CommaSeparatedVec<T> {
     type Target = Vec<T>;
 
