@@ -3,7 +3,6 @@ use std::time::Duration;
 use axum::http::{HeaderMap, HeaderName, HeaderValue};
 use axum::response::IntoResponse;
 use image::ImageFormat;
-use crate::processor::Image;
 use axum::response::Response as AxumResponse;
 
 pub struct Response {
@@ -35,9 +34,7 @@ impl IntoResponse for Response {
                 ImageFormat::WebP => {
                     headers.insert("Content-Type", "image/webp".to_string());
                 }
-                _ => {
-                    headers.insert("Content-Type", "image/jpeg".to_string());
-                }
+                _ => {}
             }
         }
 
@@ -52,5 +49,48 @@ impl IntoResponse for Response {
         res.headers_mut().extend(header_map);
 
         res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_into_response() {
+        let response = Response {
+            image: (vec![1, 2, 3], Some(ImageFormat::Jpeg)),
+            cache_time: Duration::from_secs(3600),
+        };
+
+        let res = response.into_response();
+        assert_eq!(res.status(), 200);
+        assert_eq!(res.headers().get("Content-Type").unwrap(), "image/jpeg");
+        assert_eq!(res.headers().get("Content-Length").unwrap(), "3");
+        assert_eq!(res.headers().get("Cache-Control").unwrap(), "public, max-age=3600");
+    }
+
+    #[test]
+    fn test_into_response_content_types() {
+        let testcases = vec![
+            (ImageFormat::Png, Some("image/png")),
+            (ImageFormat::Jpeg, Some("image/jpeg")),
+            (ImageFormat::WebP, Some("image/webp")),
+            // Catch all
+            (ImageFormat::Farbfeld, None),
+        ];
+
+        for testcase in testcases {
+            let response = Response {
+                image: (vec![1, 2, 3], Some(testcase.0)),
+                cache_time: Duration::from_secs(3600),
+            };
+
+            let res = response.into_response();
+            assert_eq!(
+                res.headers().get("Content-Type").and_then(|v| v.to_str().ok()),
+                testcase.1
+            );
+        }
     }
 }
