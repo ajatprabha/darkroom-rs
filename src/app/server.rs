@@ -1,51 +1,24 @@
 use std::future::Future;
 use std::net::SocketAddr;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use axum::{Extension, Router};
-use axum::routing::get;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::Notify;
-use crate::config::{Config, SourceKind};
-use crate::{handler, storage};
-
-use crate::handler::Dependencies;
-use crate::storage::webfolder::WebFolderGetter;
+use crate::config::Config;
+use crate::app::router::Router;
 
 use crate::prelude::*;
-use crate::processor::chainer::ChainProcessor;
 
 pub(crate) struct Server {
     address: SocketAddr,
-    router: Router,
+    router: axum::Router,
 }
 
 impl Server {
     pub fn new(cfg: &Config) -> Result<Self> {
-        let storage: Arc<dyn storage::Getter + Send + Sync> = match cfg.source.kind {
-            SourceKind::WebFolder => {
-                let web_folder = cfg.source.web_folder.clone()
-                    .ok_or(Error::Generic("WebFolder source is not configured".into()))?;
-                let prefix = cfg.source.path_prefix.clone();
-                let prefix = prefix.map(|s| Box::leak(s.into_boxed_str()) as &str);
-                Arc::new(
-                    WebFolderGetter::new(web_folder.base_url, prefix)
-                )
-            }
-        };
-
-        let deps = Arc::new(Dependencies {
-            storage,
-            processor: Arc::new(ChainProcessor {}),
-            cache_time: cfg.handler.response.cache_duration,
-        });
-
-        let router = Router::new()
-            .route("/*path", get(handler::image))
-            .layer(Extension(deps));
-
-        Ok(Self { router, address: cfg.http.bind_address })
+        Ok(Self { router: Router::new(cfg)?.clone(), address: cfg.http.bind_address })
     }
 
     pub async fn serve(self) -> Result<()> {
@@ -55,7 +28,7 @@ impl Server {
         let nc = notify.clone();
 
         let listener = TcpListener::bind(self.address).await?;
-        let s = axum::serve(listener, self.router)
+        let s = axum::serve(listener, self.router.into_make_service())
             .with_graceful_shutdown(async move { nc.notified().await });
 
         let sig_handler = Server::shutdown_sig(notify.clone(), shutdown_counter.clone()).await?;

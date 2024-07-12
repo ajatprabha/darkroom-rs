@@ -17,4 +17,8 @@ image = "0.25.1"
 imageproc = "0.25.0"
 
 [dev-dependencies]
+hyper = "1.4.1"
+tower = { version = "0.4.13", features = ["util"] }
+http-body-util = "0.1.2"
+mockall = "0.12.1"
 anyhow = "1.0.86"
