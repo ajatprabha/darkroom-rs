@@ -159,7 +159,7 @@ Rust is very consistent, with almost 2/3rd requests completing in less than 500m
 
 Moreover, it absolutely destroyed Go even with CPU only operations.
 
-> Note: These unit is in seconds.
+> Note: Y-axis is in seconds.
 
 <a href="./graphs/latencies.png"><img src="./graphs/latencies.png" alt="Latencies" style="width: 100%;"/></a>
 
