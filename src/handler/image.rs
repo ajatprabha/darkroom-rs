@@ -67,6 +67,7 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use axum::routing::get;
+    use opentelemetry::metrics::MeterProvider;
     use crate::{handler, storage};
     use crate::storage::GetResponse;
     use crate::storage::getter::MockGetter;
@@ -74,9 +75,14 @@ mod tests {
 
 
     fn deps(mock: MockGetter) -> Arc<Dependencies> {
+        let meter = Arc::new(
+            opentelemetry::global::meter_provider()
+                .meter("test-meter")
+        );
+
         Arc::new(Dependencies {
             storage: Arc::new(mock),
-            processor: Arc::new(ChainProcessor {}),
+            processor: Arc::new(ChainProcessor::new(meter)),
             cache_time: Duration::from_secs(300),
         })
     }

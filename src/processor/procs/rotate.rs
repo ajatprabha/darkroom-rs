@@ -5,6 +5,7 @@ pub struct Rotate {
     pub degrees: f32,
 }
 
+
 impl Processor for Rotate {
     fn process(&self, image: &mut Image) -> Result<(), Error> {
         if self.degrees == 0.0 { return Ok(()); }

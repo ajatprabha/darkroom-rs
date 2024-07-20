@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use prometheus::Registry;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::Notify;
@@ -17,8 +18,8 @@ pub(crate) struct Server {
 }
 
 impl Server {
-    pub fn new(cfg: &Config) -> Result<Self> {
-        Ok(Self { router: Router::new(cfg)?.clone(), address: cfg.http.bind_address })
+    pub fn new(cfg: &Config, reg: Registry) -> Result<Self> {
+        Ok(Self { router: Router::new(cfg, reg)?.clone(), address: cfg.http.bind_address })
     }
 
     pub async fn serve(self) -> Result<()> {

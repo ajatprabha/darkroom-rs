@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::handler::query::{Fit, ProcessParams};
 use crate::processor::chain::ProcessorChainBuilder;
 use crate::processor::error::Error;
@@ -8,12 +9,27 @@ use crate::processor::procs::flip::Flip as FlipProcessor;
 use crate::processor::procs::rotate::Rotate as RotateProcessor;
 use crate::processor::procs::monochrome::MonoChrome as MonoChromeProcessor;
 use crate::processor::procs::blur::Blur as BlurProcessor;
+use opentelemetry::{
+    metrics::{Histogram, Meter, Unit},
+};
 
-pub struct Processor {}
+pub struct Processor {
+    histogram: Arc<Histogram<f64>>,
+}
 
 impl Processor {
+    pub fn new(meter: Arc<Meter>) -> Self {
+        Self {
+            histogram: Arc::new(
+                meter.f64_histogram("processor_run_duration")
+                    .with_unit(Unit::new("s"))
+                    .init()
+            ),
+        }
+    }
+
     pub fn process(&self, image: &mut Image, params: ProcessParams) -> Result<(), Error> {
-        let mut cb = ProcessorChainBuilder::new();
+        let mut cb = ProcessorChainBuilder::new(self.histogram.clone());
 
         if let Some(flip) = params.flip {
             cb.add_processor(FlipProcessor { flip_type: flip.into() });
@@ -64,6 +80,7 @@ impl Processor {
 #[cfg(test)]
 mod tests {
     use image::{DynamicImage, RgbImage};
+    use opentelemetry::metrics::MeterProvider;
     use crate::handler::query::{AutoFeature, Crop, Flip, MonoChrome, Rotate};
     use super::*;
 
@@ -96,7 +113,15 @@ mod tests {
 
         for testcase in testcases {
             let base_image: DynamicImage = DynamicImage::ImageRgb8(RgbImage::new(32, 32));
-            let processor = Processor {};
+            let processor = Processor {
+                histogram: Arc::new(
+                    opentelemetry::global::meter_provider()
+                        .meter("test-meter")
+                        .f64_histogram("processor_run_duration")
+                        .with_unit(Unit::new("s"))
+                        .init()
+                ),
+            };
             let mut image = Image::new(base_image);
             processor.process(&mut image, testcase.0).unwrap();
             assert_eq!(&testcase.1, image.as_bytes());
