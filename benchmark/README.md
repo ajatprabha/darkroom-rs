@@ -4,6 +4,8 @@ On Mac, colima can be used to run docker and then docker-compose spins up everyt
 
 To export node metrics, follow these steps:
 
+<details><summary>Steps</summary>
+
 ```shell
 wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 tar xvfz node_exporter-1.8.2.linux-amd64.tar.gz
@@ -100,6 +102,8 @@ sudo systemctl status push_metrics.timer
 ```
 
 > In grafana, import dashboard ID: 1860
+
+</details>
 
 ### Run Benchmark
 
