@@ -68,6 +68,7 @@ mod tests {
     use axum::http::Request;
     use axum::routing::get;
     use opentelemetry::metrics::MeterProvider;
+    use prometheus::Registry;
     use crate::{handler, storage};
     use crate::storage::GetResponse;
     use crate::storage::getter::MockGetter;
@@ -81,6 +82,7 @@ mod tests {
         );
 
         Arc::new(Dependencies {
+            registry: Arc::new(Registry::new()),
             storage: Arc::new(mock),
             processor: Arc::new(ChainProcessor::new(meter)),
             cache_time: Duration::from_secs(300),

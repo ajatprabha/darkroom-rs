@@ -35,6 +35,7 @@ impl Server {
         let sig_handler = Server::shutdown_sig(notify.clone(), shutdown_counter.clone()).await?;
         tokio::spawn(sig_handler);
 
+        println!("Starting server at {}", self.address);
         s.await?;
 
         Ok(())

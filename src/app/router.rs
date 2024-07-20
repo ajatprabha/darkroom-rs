@@ -37,6 +37,9 @@ impl Router {
                     .ok_or(Error::Generic("WebFolder source is not configured".into()))?;
                 let prefix = cfg.source.path_prefix.clone();
                 let prefix = prefix.map(|s| Box::leak(s.into_boxed_str()) as &str);
+
+                println!("WebFolder: {}", web_folder.base_url.deref().to_string());
+
                 Arc::new(
                     WebFolderGetter::new(web_folder.base_url, prefix)
                 )

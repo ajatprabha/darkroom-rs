@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'darkroom-rs'
+    static_configs:
+      - targets: ['darkroom-rs:3001']
+
+  - job_name: 'darkroom-go'
+    static_configs:
+      - targets: ['darkroom-go:3002']
+
+  - job_name: 'host-stats'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'pushgateway:9091' ]

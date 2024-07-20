@@ -72,8 +72,6 @@ impl Config {
         let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
 
         Self::parse(vec![
-            File::with_name("src/config/values/default")
-                .required(false),
             File::with_name(format!("{}/.darkroom/default", home_dir).as_str())
                 .required(false),
             File::with_name(&format!("{}/.darkroom/{}", home_dir, run_mode))
@@ -101,11 +99,24 @@ mod tests {
 
     #[test]
     fn test_config() {
+        let env_vars = vec![
+            ("LOG__LEVEL", "debug"),
+            ("HTTP__DEBUG_MODE", "true"),
+            ("HTTP__BIND_ADDRESS", "127.0.0.1:3000"),
+            ("HANDLER__RESPONSE__CACHE_DURATION", "10m"),
+            ("SOURCE__KIND", "WebFolder"),
+            ("SOURCE__WEB_FOLDER__BASE_URL", "https://example.com"),
+            ("SOURCE__PATH_PREFIX", "/assets"),
+            ("SOURCE__NETWORK__CONFIG__TIMEOUT", "5s"),
+        ];
+        for (key, value) in &env_vars {
+            env::set_var(key, value);
+        }
         let cfg = Config::new().unwrap();
 
         assert_eq!(cfg.log.enabled, None);
         assert_eq!(cfg.log.level, "debug".to_string());
-        assert_eq!(cfg.http.debug_mode, None);
+        assert_eq!(cfg.http.debug_mode, Some(true));
         assert_eq!(cfg.http.bind_address, SocketAddr::from_str("127.0.0.1:3000").unwrap());
         assert_eq!(cfg.handler.response.cache_duration, Duration::from_secs(600));
 
@@ -113,5 +124,9 @@ mod tests {
         assert_eq!(cfg.source.web_folder.unwrap().base_url, Url::new("https://example.com").unwrap());
         assert_eq!(cfg.source.path_prefix, Some("/assets".to_string()));
         assert_eq!(cfg.source.network.config.timeout, Duration::from_secs(5));
+
+        for (key, _) in &env_vars {
+            env::remove_var(key);
+        }
     }
 }
