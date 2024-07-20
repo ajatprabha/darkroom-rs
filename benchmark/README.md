@@ -153,6 +153,12 @@ Bucket           #    %       Histogram
 
 Rust is very consistent, with almost 2/3rd requests completing in less than 500ms, and max latency not going beyond 1s.
 
+Moreover, it absolutely destroyed Go even with CPU only operations.
+
+> Note: These unit is in seconds.
+
+<a href="./graphs/latencies.png"><img src="./graphs/latencies.png" alt="Latencies" style="width: 100%;"/></a>
+
 #### Resources Stats
 
 > CPU is 1m load avg.
