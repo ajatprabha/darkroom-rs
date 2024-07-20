@@ -15,6 +15,12 @@ async-trait = "0.1.81"
 url = "2.5.2"
 image = "0.25.1"
 imageproc = "0.25.0"
+opentelemetry = "0.23.0"
+opentelemetry_sdk = "0.23.0"
+opentelemetry-prometheus = "0.16.0"
+prometheus = "0.13.4"
+prometheus-client = "0.22.3"
+axum-macros = "0.4.1"
 
 [dev-dependencies]
 hyper = "1.4.1"

@@ -1,0 +1,3 @@
+[submodule "benchmark/darkroom-go"]
+	path = benchmark/darkroom-go
+	url = https://github.com/gojek/darkroom.git

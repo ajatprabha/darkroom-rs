@@ -27,23 +27,15 @@ pub async fn image(
         }));
     }
 
-    let cursor = Cursor::new(res.content);
+    let reader = ImageReader::new(Cursor::new(res.content))
+        .with_guessed_format()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let reader = ImageReader::new(cursor)
-        .with_guessed_format();
-
-    if let Err(_) = reader {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    }
-
-    let reader = reader.unwrap();
     let format = reader.format();
 
-    let decoded = reader.decode();
-    if let Err(_) = decoded {
-        return Err(StatusCode::UNPROCESSABLE_ENTITY);
-    }
-    let decoded = decoded.unwrap();
+    let decoded = reader
+        .decode()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let mut image = if format.is_none() {
         Image::new(decoded)
@@ -52,13 +44,12 @@ pub async fn image(
     };
 
     if deps.processor.process(&mut image, params).is_err() {
-        return Err(StatusCode::UNPROCESSABLE_ENTITY);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     let mut buffer = Cursor::new(Vec::new());
-    if let Err(e) = image.write_to(&mut buffer, format.unwrap_or_else(|| ImageFormat::Jpeg)) {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    }
+    image.write_to(&mut buffer, format.unwrap_or_else(|| ImageFormat::Jpeg))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((StatusCode::OK, Response {
         image: (buffer.into_inner(), image.format),
@@ -68,24 +59,32 @@ pub async fn image(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use mockall::predicate::*;
+    use tower::ServiceExt;
+    use http_body_util::BodyExt;
     use std::time::Duration;
     use axum::body::Body;
     use axum::http::Request;
     use axum::routing::get;
-    use crate::processor::chainer::ChainProcessor;
-    use super::*;
-    use mockall::predicate::*;
+    use opentelemetry::metrics::MeterProvider;
+    use prometheus::Registry;
+    use crate::{handler, storage};
     use crate::storage::GetResponse;
     use crate::storage::getter::MockGetter;
-    use tower::ServiceExt;
-    use http_body_util::BodyExt;
-    use crate::{handler, storage};
+    use crate::processor::chainer::ChainProcessor;
 
 
     fn deps(mock: MockGetter) -> Arc<Dependencies> {
+        let meter = Arc::new(
+            opentelemetry::global::meter_provider()
+                .meter("test-meter")
+        );
+
         Arc::new(Dependencies {
+            registry: Arc::new(Registry::new()),
             storage: Arc::new(mock),
-            processor: Arc::new(ChainProcessor {}),
+            processor: Arc::new(ChainProcessor::new(meter)),
             cache_time: Duration::from_secs(300),
         })
     }
