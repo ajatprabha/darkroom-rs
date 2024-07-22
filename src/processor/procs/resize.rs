@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use image::GenericImageView;
 use image::imageops::FilterType;
 use crate::processor::{Image, Processor};
@@ -31,19 +32,20 @@ impl Resize {
         let (w, h) = self.resize_width_height(image);
 
         if w != iw || h != ih {
-            *image = image.resize_exact(w, h, FilterType::Triangle).into();
+            image.extend(image.resize_exact(w, h, FilterType::Triangle));
         }
 
         Ok(())
     }
 }
 
+#[async_trait]
 impl Processor for Resize {
-    fn process(&self, image: &mut Image) -> Result<(), Error> {
+    async fn process(&self, image: &mut Image) -> Result<(), Error> {
         if self.maintain_aspect_ratio {
             self.resize(image)
         } else {
-            *image = image.resize(self.width, self.height, FilterType::Triangle).into();
+            image.extend(image.resize(self.width, self.height, FilterType::Triangle));
             Ok(())
         }
     }

@@ -1,4 +1,3 @@
 mod server;
-mod router;
-
+pub(crate) mod router;
 pub(super) use server::Server;

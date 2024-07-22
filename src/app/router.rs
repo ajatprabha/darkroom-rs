@@ -1,7 +1,6 @@
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use axum::Extension;
-use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::get;
@@ -14,6 +13,9 @@ use crate::processor::chainer::ChainProcessor;
 use crate::{handler, storage};
 use crate::storage::webfolder::WebFolderGetter;
 use crate::prelude::Result;
+
+#[cfg(feature = "gpu")]
+use crate::processor::gpuprocs::GPUBackend;
 
 pub struct Router {
     inner: axum::Router,
@@ -30,34 +32,54 @@ impl DerefMut for Router {
 }
 
 impl Router {
+    #[cfg(not(feature = "gpu"))]
     pub fn new(cfg: &Config, reg: Registry) -> Result<Self> {
-        let storage: Arc<dyn storage::Getter + Send + Sync> = match cfg.source.kind {
+        Ok(Self {
+            inner: Self::build_router(Arc::new(
+                Dependencies {
+                    registry: Arc::new(reg),
+                    storage: Self::storage(cfg)?,
+                    processor: Arc::new(ChainProcessor::new(Arc::new(
+                        opentelemetry::global::meter_provider()
+                            .meter("darkroom-rs")
+                    ))),
+                    cache_time: cfg.handler.response.cache_duration,
+                }
+            ))
+        })
+    }
+
+    #[cfg(feature = "gpu")]
+    pub fn gpu(cfg: &Config, reg: Registry, gpu: GPUBackend) -> Result<Self> {
+        Ok(Self {
+            inner: Self::build_router(Arc::new(Dependencies {
+                registry: Arc::new(reg),
+                storage: Self::storage(cfg)?,
+                processor: Arc::new(ChainProcessor::gpu(
+                    Arc::new(gpu),
+                    Arc::new(
+                        opentelemetry::global::meter_provider()
+                            .meter("darkroom-rs")
+                    ),
+                )),
+                cache_time: cfg.handler.response.cache_duration,
+            }))
+        })
+    }
+
+    fn storage(cfg: &Config) -> Result<Arc<dyn storage::Getter + Send + Sync>> {
+        match cfg.source.kind {
             SourceKind::WebFolder => {
                 let web_folder = cfg.source.web_folder.clone()
                     .ok_or(Error::Generic("WebFolder source is not configured".into()))?;
                 let prefix = cfg.source.path_prefix.clone();
                 let prefix = prefix.map(|s| Box::leak(s.into_boxed_str()) as &str);
 
-                println!("WebFolder: {}", web_folder.base_url.deref().to_string());
-
-                Arc::new(
+                Ok(Arc::new(
                     WebFolderGetter::new(web_folder.base_url, prefix)
-                )
+                ))
             }
-        };
-
-        let meter = Arc::new(
-            opentelemetry::global::meter_provider()
-                .meter("darkroom-rs")
-        );
-        let deps = Arc::new(Dependencies {
-            registry: Arc::new(reg),
-            storage,
-            processor: Arc::new(ChainProcessor::new(meter)),
-            cache_time: cfg.handler.response.cache_duration,
-        });
-
-        Ok(Self { inner: Self::build_router(deps) })
+        }
     }
 
     fn build_router(deps: Arc<Dependencies>) -> axum::Router {

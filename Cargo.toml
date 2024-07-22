@@ -3,6 +3,10 @@ name = "darkroom-rs"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+gpu = ["wgpu", "bytemuck"]
+
 [dependencies]
 config = "0.14.0"
 serde = { version = "1.0.204", features = ["derive"] }
@@ -15,12 +19,16 @@ async-trait = "0.1.81"
 url = "2.5.2"
 image = "0.25.1"
 imageproc = "0.25.0"
+wgpu = { version = "22.0.0", optional = true }
 opentelemetry = "0.23.0"
 opentelemetry_sdk = "0.23.0"
 opentelemetry-prometheus = "0.16.0"
 prometheus = "0.13.4"
 prometheus-client = "0.22.3"
 axum-macros = "0.4.1"
+bytemuck = { version = "1.16.1", features = ["derive"], optional = true }
+log = { version = "0.4.22", features = ["kv"] }
+env_logger = "0.11.3"
 
 [dev-dependencies]
 hyper = "1.4.1"

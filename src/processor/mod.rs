@@ -5,12 +5,16 @@ mod procs;
 
 pub(crate) mod chainer;
 
+#[cfg(feature = "gpu")]
+pub(crate) mod gpuprocs;
+
 use std::any::type_name;
 pub use crate::processor::image::Image;
 use crate::processor::error::Error;
 
+#[async_trait::async_trait]
 pub trait Processor {
     fn name<'a>(&self) -> &'a str { type_name::<Self>() }
 
-    fn process(&self, image: &mut Image) -> Result<(), Error>;
+    async fn process(&self, image: &mut Image) -> Result<(), Error>;
 }

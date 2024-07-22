@@ -72,6 +72,8 @@ impl Config {
         let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
 
         Self::parse(vec![
+            File::with_name("src/config/values/default")
+                .required(false),
             File::with_name(format!("{}/.darkroom/default", home_dir).as_str())
                 .required(false),
             File::with_name(&format!("{}/.darkroom/{}", home_dir, run_mode))

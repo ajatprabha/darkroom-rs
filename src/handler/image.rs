@@ -18,7 +18,10 @@ pub async fn image(
 ) -> Result<impl IntoResponse, StatusCode> {
     let res = deps.storage.get(GetRequest { path, options: None })
         .await
-        .map_err(|e| e.status_code())?;
+        .map_err(|e| {
+            log::error!("Failed to get image: {}", e);
+            e.status_code()
+        })?;
 
     if params.is_noop() {
         return Ok((StatusCode::OK, Response {
@@ -29,13 +32,19 @@ pub async fn image(
 
     let reader = ImageReader::new(Cursor::new(res.content))
         .with_guessed_format()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            log::error!("Failed to guess image format: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let format = reader.format();
 
     let decoded = reader
         .decode()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            log::error!("Failed to decode image: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let mut image = if format.is_none() {
         Image::new(decoded)
@@ -43,13 +52,17 @@ pub async fn image(
         Image::format(decoded, format.unwrap())
     };
 
-    if deps.processor.process(&mut image, params).is_err() {
+    if let Err(e) = deps.processor.process(&mut image, params).await {
+        log::error!("Failed to process image: {}", e);
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     let mut buffer = Cursor::new(Vec::new());
     image.write_to(&mut buffer, format.unwrap_or_else(|| ImageFormat::Jpeg))
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            log::error!("Failed to write image: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok((StatusCode::OK, Response {
         image: (buffer.into_inner(), image.format),
@@ -57,6 +70,7 @@ pub async fn image(
     }))
 }
 
+#[cfg(not(feature = "gpu"))]
 #[cfg(test)]
 mod tests {
     use super::*;
