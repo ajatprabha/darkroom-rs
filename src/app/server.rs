@@ -1,27 +1,19 @@
 use std::future::Future;
 use std::net::SocketAddr;
-use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use prometheus::Registry;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::Notify;
-use crate::config::Config;
-use crate::app::router::Router;
 
 use crate::prelude::*;
 
 pub(crate) struct Server {
-    address: SocketAddr,
-    router: axum::Router,
+    pub address: SocketAddr,
+    pub router: axum::Router,
 }
 
 impl Server {
-    pub fn new(cfg: &Config, reg: Registry) -> Result<Self> {
-        Ok(Self { router: Router::new(cfg, reg)?.clone(), address: cfg.http.bind_address })
-    }
-
     pub async fn serve(self) -> Result<()> {
         let notify = Arc::new(Notify::new());
         let shutdown_counter = Arc::new(AtomicUsize::new(0));

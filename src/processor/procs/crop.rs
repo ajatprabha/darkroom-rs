@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use image::GenericImageView;
 use image::imageops::FilterType;
 use crate::processor::error::Error;
@@ -59,8 +60,9 @@ impl Crop {
     }
 }
 
+#[async_trait]
 impl Processor for Crop {
-    fn process(&self, image: &mut Image) -> Result<(), Error> {
+    async fn process(&self, image: &mut Image) -> Result<(), Error> {
         if self.width == 0 || self.height == 0 {
             if self.width == 0 && self.height == 0 {
                 return Ok(());
@@ -70,16 +72,17 @@ impl Processor for Crop {
                 width: self.width,
                 height: self.height,
                 maintain_aspect_ratio: true,
-            }.process(image);
+            }.process(image).await;
         }
 
         let (w, h) = self.resize_width_height_for_crop(image);
 
-        *image = image.resize_exact(w, h, FilterType::Triangle).into();
+        image.extend(image.resize_exact(w, h, FilterType::Triangle));
 
         let (x, y) = self.start_point_for_crop(w, h);
 
-        *image = image.crop(x, y, self.width, self.height).into();
+        let cropped = image.crop(x, y, self.width, self.height);
+        image.extend(cropped);
 
         Ok(())
     }

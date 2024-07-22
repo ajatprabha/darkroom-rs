@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use crate::processor::error::Error;
 use crate::processor::{Image, Processor};
 
@@ -7,8 +8,9 @@ pub struct Blur {
     pub radius: u16,
 }
 
+#[async_trait]
 impl Processor for Blur {
-    fn process(&self, image: &mut Image) -> Result<(), Error> {
+    async fn process(&self, image: &mut Image) -> Result<(), Error> {
         if self.radius == 0 { return Ok(()); }
 
         let s = if self.radius > MAX_BLUR_RADIUS {
@@ -17,7 +19,7 @@ impl Processor for Blur {
             self.radius as f32 / 3.0
         };
 
-        *image = image.blur(s).into();
+        image.extend(image.blur(s));
 
         Ok(())
     }

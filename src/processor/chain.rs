@@ -40,11 +40,11 @@ pub struct ProcessorChain<'a> {
 }
 
 impl<'a> ProcessorChain<'a> {
-    pub fn reduce(&self, image: &mut Image) -> Result<(), Error> {
+    pub async fn reduce(&self, image: &mut Image) -> Result<(), Error> {
         for processor in &self.processors {
             let start = time::Instant::now();
 
-            processor.process(image)?;
+            processor.process(image).await?;
 
             self
                 .histogram

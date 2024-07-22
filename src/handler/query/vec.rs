@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Deserializer};
-use serde::de::{self, IntoDeserializer, SeqAccess, Visitor};
+use serde::de::{self, IntoDeserializer, Visitor};
 use serde::de::value::StrDeserializer;
 
 #[derive(Debug, PartialEq)]

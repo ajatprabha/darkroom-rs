@@ -10,4 +10,8 @@ pub enum Error {
     Config(#[from] config::ConfigError),
     #[error(transparent)]
     Image(#[from] processor::error::Error),
+
+    #[cfg(feature = "gpu")]
+    #[error(transparent)]
+    GPU(#[from] processor::gpuprocs::error::Error),
 }

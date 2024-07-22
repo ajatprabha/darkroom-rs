@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use crate::handler::query::Flip as QueryFlip;
 use crate::processor::{Image, Processor};
 use crate::processor::error::Error;
@@ -22,13 +23,14 @@ pub struct Flip {
     pub flip_type: FlipType,
 }
 
+#[async_trait]
 impl Processor for Flip {
-    fn process(&self, image: &mut Image) -> Result<(), Error> {
-        *image = match self.flip_type {
+    async fn process(&self, image: &mut Image) -> Result<(), Error> {
+        image.extend(match self.flip_type {
             FlipType::Horizontal => image.fliph(),
             FlipType::Vertical => image.flipv(),
             FlipType::VerticalHorizontal => image.fliph().flipv(),
-        }.into();
+        });
         Ok(())
     }
 }

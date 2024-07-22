@@ -8,13 +8,25 @@ use crate::processor::procs::resize::Resize as ResizeProcessor;
 use crate::processor::procs::flip::Flip as FlipProcessor;
 use crate::processor::procs::rotate::Rotate as RotateProcessor;
 use crate::processor::procs::monochrome::MonoChrome as MonoChromeProcessor;
+
+
+#[cfg(feature = "gpu")]
+use crate::processor::gpuprocs::GPUBackend;
+#[cfg(feature = "gpu")]
+use crate::processor::gpuprocs::Blur as GPUBlurProcessor;
+
+#[cfg(not(feature = "gpu"))]
 use crate::processor::procs::blur::Blur as BlurProcessor;
+
 use opentelemetry::{
     metrics::{Histogram, Meter, Unit},
 };
 
 pub struct Processor {
     histogram: Arc<Histogram<f64>>,
+
+    #[cfg(feature = "gpu")]
+    gpu: Option<Arc<GPUBackend>>,
 }
 
 impl Processor {
@@ -25,10 +37,24 @@ impl Processor {
                     .with_unit(Unit::new("s"))
                     .init()
             ),
+            #[cfg(feature = "gpu")]
+            gpu: None,
         }
     }
 
-    pub fn process(&self, image: &mut Image, params: ProcessParams) -> Result<(), Error> {
+    #[cfg(feature = "gpu")]
+    pub fn gpu(gpu: Arc<GPUBackend>, meter: Arc<Meter>) -> Self {
+        Self {
+            histogram: Arc::new(
+                meter.f64_histogram("processor_run_duration")
+                    .with_unit(Unit::new("s"))
+                    .init()
+            ),
+            gpu: Some(gpu),
+        }
+    }
+
+    pub async fn process(&self, image: &mut Image, params: ProcessParams) -> Result<(), Error> {
         let mut cb = ProcessorChainBuilder::new(self.histogram.clone());
 
         if let Some(flip) = params.flip {
@@ -70,13 +96,24 @@ impl Processor {
         }
 
         if let Some(blur) = params.blur {
+            #[cfg(feature = "gpu")]
+            if self.gpu.is_some() {
+                cb.add_processor(GPUBlurProcessor {
+                    gpu: self.gpu.clone().unwrap(),
+                    radius: blur,
+                });
+            }
+
+            #[cfg(not(feature = "gpu"))]
             cb.add_processor(BlurProcessor { radius: blur });
         }
 
-        cb.build().reduce(image)
+        cb.build().reduce(image).await
     }
 }
 
+
+#[cfg(not(feature = "gpu"))]
 #[cfg(test)]
 mod tests {
     use image::{DynamicImage, RgbImage};
@@ -85,7 +122,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_process() {
+    async fn test_process() {
         let testcases: Vec<(ProcessParams, Vec<u8>)> = vec![
             (ProcessParams {
                 width: Some(2),
@@ -123,7 +160,7 @@ mod tests {
                 ),
             };
             let mut image = Image::new(base_image);
-            processor.process(&mut image, testcase.0).unwrap();
+            processor.process(&mut image, testcase.0).await.unwrap();
             assert_eq!(&testcase.1, image.as_bytes());
         }
     }

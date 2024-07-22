@@ -10,6 +10,10 @@ impl Image {
     pub fn format(inner: DynamicImage, format: ImageFormat) -> Self { Self { inner, format: Some(format) } }
 
     pub fn new(inner: DynamicImage) -> Self { Self { inner, format: None } }
+
+    pub fn extend(&mut self, image: DynamicImage) {
+        self.inner = image;
+    }
 }
 
 impl Deref for Image {

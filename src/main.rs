@@ -6,15 +6,21 @@ mod handler;
 mod app;
 mod processor;
 
-use std::ops::Deref;
+use std::io::Write;
+use env_logger::{TimestampPrecision, WriteStyle};
+use log::LevelFilter;
 use crate::config::Config;
 use crate::app::Server;
 use crate::prelude::Result;
+use crate::app::router::Router;
 
-use opentelemetry::metrics::{MeterProvider, Unit};
+use opentelemetry::metrics::Unit;
 use opentelemetry_sdk::metrics::{Aggregation, Instrument, new_view, SdkMeterProvider, Stream};
 use prometheus::{Registry};
 use crate::error::Error::Generic;
+
+#[cfg(feature = "gpu")]
+use crate::processor::gpuprocs::GPUBackend;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -41,5 +47,34 @@ async fn main() -> Result<()> {
 
     opentelemetry::global::set_meter_provider(provider);
 
-    Server::new(&Config::new()?, registry)?.serve().await
+    let cfg = Config::new()?;
+
+    env_logger::builder()
+        .format_timestamp(Some(TimestampPrecision::Millis))
+        .write_style(WriteStyle::Always)
+        .filter_level(LevelFilter::Info)
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "{} [{}] {}: {}",
+                buf.timestamp(),
+                record.level(),
+                record.target(),
+                record.args()
+            )
+        })
+        .init();
+
+    #[cfg(feature = "gpu")]
+    let gpu_backend = GPUBackend::new().await?;
+    #[cfg(feature = "gpu")]
+    let router = Router::gpu(&cfg, registry, gpu_backend)?;
+
+    #[cfg(not(feature = "gpu"))]
+    let router = Router::new(&cfg, registry)?;
+
+    Server {
+        router: router.clone(),
+        address: cfg.http.bind_address,
+    }.serve().await
 }
